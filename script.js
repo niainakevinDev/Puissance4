@@ -1,5 +1,5 @@
 // ============================================
-// 🎮 PUISSANCE 4 - Version complète
+// 🎮 PUISSANCE 4 - Version 2 Joueurs
 // ============================================
 
 class Game {
@@ -90,105 +90,6 @@ class Game {
 }
 
 // ============================================
-// 🤖 IA
-// ============================================
-
-class AI {
-  constructor(depth = 4) {
-    this.depth = depth;
-  }
-
-  getBestMove(game) {
-    let bestScore = -Infinity;
-    let bestCol = Math.floor(game.COLS / 2);
-    for (let col = 0; col < game.COLS; col++) {
-      if (!game.isValidMove(col)) continue;
-      const newGame = game.dropToken(col);
-      if (!newGame) continue;
-      const score = this.minimax(newGame, this.depth - 1, -Infinity, Infinity, false);
-      if (score > bestScore) {
-        bestScore = score;
-        bestCol = col;
-      }
-    }
-    return bestCol;
-  }
-
-  minimax(game, depth, alpha, beta, isMaximizing) {
-    if (game.isGameOver || depth === 0) return this.evaluate(game);
-
-    if (isMaximizing) {
-      let maxEval = -Infinity;
-      for (let col = 0; col < game.COLS; col++) {
-        if (!game.isValidMove(col)) continue;
-        const newGame = game.dropToken(col);
-        if (!newGame) continue;
-        const evalScore = this.minimax(newGame, depth - 1, alpha, beta, false);
-        maxEval = Math.max(maxEval, evalScore);
-        alpha = Math.max(alpha, evalScore);
-        if (beta <= alpha) break;
-      }
-      return maxEval;
-    } else {
-      let minEval = Infinity;
-      for (let col = 0; col < game.COLS; col++) {
-        if (!game.isValidMove(col)) continue;
-        const newGame = game.dropToken(col);
-        if (!newGame) continue;
-        const evalScore = this.minimax(newGame, depth - 1, alpha, beta, true);
-        minEval = Math.min(minEval, evalScore);
-        beta = Math.min(beta, evalScore);
-        if (beta <= alpha) break;
-      }
-      return minEval;
-    }
-  }
-
-  evaluate(game) {
-    if (game.winner === 'yellow') return 1000;
-    if (game.winner === 'red') return -1000;
-    if (game.isGameOver) return 0;
-
-    let score = 0;
-    const centerCol = Math.floor(game.COLS / 2);
-    for (let row = 0; row < game.ROWS; row++) {
-      if (game.board[row][centerCol] === 'yellow') score += 3;
-      if (game.board[row][centerCol] === 'red') score -= 3;
-    }
-
-    for (let row = 0; row < game.ROWS; row++) {
-      for (let col = 0; col < game.COLS; col++) {
-        const player = game.board[row][col];
-        if (!player) continue;
-        const value = player === 'yellow' ? 1 : -1;
-        score += this.evaluatePosition(game, row, col, player) * value;
-      }
-    }
-    return score;
-  }
-
-  evaluatePosition(game, row, col, player) {
-    let score = 0;
-    const directions = [[0,1], [1,0], [1,1], [1,-1]];
-    for (const [dx, dy] of directions) {
-      let count = 1;
-      for (let dir = -1; dir <= 1; dir += 2) {
-        for (let step = 1; step < 4; step++) {
-          const newRow = row + dx * step * dir;
-          const newCol = col + dy * step * dir;
-          if (newRow < 0 || newRow >= game.ROWS || newCol < 0 || newCol >= game.COLS) break;
-          if (game.board[newRow][newCol] === player) count++;
-          else break;
-        }
-      }
-      if (count === 3) score += 10;
-      else if (count === 2) score += 2;
-    }
-    return score;
-  }
-}
-
-// ============================================
 // 🎨 Rendu
 // ============================================
 
@@ -265,11 +166,8 @@ class Renderer {
 
 const canvas = document.getElementById('gameCanvas');
 const renderer = new Renderer(canvas);
-const ai = new AI(4);
 
 let game = new Game();
-let mode = 'pvp';
-let isAIThinking = false;
 
 renderer.setGame(game);
 renderer.drawBoard();
@@ -279,7 +177,7 @@ renderer.drawBoard();
 // ============================================
 
 canvas.addEventListener('click', (e) => {
-  if (isAIThinking || !game || game.isGameOver) return;
+  if (!game || game.isGameOver) return;
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const x = (e.clientX - rect.left) * scaleX;
@@ -311,19 +209,6 @@ function handleMove(col) {
   renderer.setGame(game);
   renderer.drawBoard();
   updateUI();
-  if (mode === 'ai' && !game.isGameOver && game.currentPlayer === 'yellow') {
-    makeAIMove();
-  }
-}
-
-function makeAIMove() {
-  if (isAIThinking) return;
-  isAIThinking = true;
-  setTimeout(() => {
-    const col = ai.getBestMove(game);
-    handleMove(col);
-    isAIThinking = false;
-  }, 300);
 }
 
 function newGame() {
@@ -331,9 +216,6 @@ function newGame() {
   renderer.setGame(game);
   renderer.drawBoard();
   updateUI();
-  if (mode === 'ai' && game.currentPlayer === 'yellow') {
-    makeAIMove();
-  }
 }
 
 function updateUI() {
@@ -354,20 +236,3 @@ function updateUI() {
 // ============================================
 
 document.getElementById('reset-btn').addEventListener('click', newGame);
-
-document.getElementById('ai-btn').addEventListener('click', () => {
-  mode = 'ai';
-  document.getElementById('ai-btn').classList.add('active');
-  document.getElementById('pvp-btn').classList.remove('active');
-  newGame();
-});
-
-document.getElementById('pvp-btn').addEventListener('click', () => {
-  mode = 'pvp';
-  document.getElementById('pvp-btn').classList.add('active');
-  document.getElementById('ai-btn').classList.remove('active');
-  newGame();
-});
-
-// Mode par défaut
-document.getElementById('pvp-btn').classList.add('active');
