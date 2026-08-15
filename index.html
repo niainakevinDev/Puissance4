@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Puissance 4 · IA MinMax</title>
+  <title>Puissance 4 · IA & 2 Joueurs</title>
   <!-- Font & icônes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -100,11 +100,18 @@
       box-shadow: 0 4px 8px rgba(245, 179, 66, 0.3);
     }
 
-    .reset-btn {
+    .controls {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
       background: #1f3a5f;
       border: none;
       color: white;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       padding: 0.6rem 1.4rem;
       border-radius: 40px;
@@ -117,14 +124,34 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
-    .reset-btn:hover {
+    .btn:hover {
       background: #2a4a74;
       transform: scale(1.02);
       box-shadow: 0 12px 24px -8px rgba(31, 58, 95, 0.3);
     }
 
-    .reset-btn:active {
+    .btn:active {
       transform: scale(0.96);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #1f3a5f;
+      border: 2px solid #1f3a5f40;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: #1f3a5f10;
+      border-color: #1f3a5f;
+      transform: scale(1.02);
+    }
+
+    .btn-outline.active {
+      background: #1f3a5f;
+      color: white;
+      border-color: #1f3a5f;
+      box-shadow: 0 8px 16px -6px rgba(31, 58, 95, 0.2);
     }
 
     .grid-wrapper {
@@ -258,9 +285,9 @@
         gap: 0.6rem;
         justify-content: center;
       }
-      .reset-btn {
+      .btn {
         padding: 0.4rem 1rem;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
       }
     }
   </style>
@@ -268,7 +295,7 @@
 <body>
   <div class="game-card" role="main">
     <h1>
-      <i class="fas fa-chess-queen"></i> Puissance 4 · IA
+      <i class="fas fa-chess-queen"></i> Puissance 4
     </h1>
 
     <div class="status-bar">
@@ -277,10 +304,15 @@
         <span class="token-badge" id="turnBadge">●</span>
         <span id="turnText">Joueur 1</span>
       </div>
-      <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
-        <span class="ia-badge"><i class="fas fa-brain"></i> IA MinMax</span>
-        <button class="reset-btn" id="resetGameBtn">
-          <i class="fas fa-rotate-right"></i> Nouvelle partie
+      <div class="controls">
+        <button class="btn btn-outline active" id="modePVP" title="Joueur contre Joueur">
+          <i class="fas fa-users"></i> 2J
+        </button>
+        <button class="btn btn-outline" id="modePVAI" title="Joueur contre IA">
+          <i class="fas fa-robot"></i> vs IA
+        </button>
+        <button class="btn" id="resetGameBtn">
+          <i class="fas fa-rotate-right"></i> Nouveau
         </button>
       </div>
     </div>
@@ -294,7 +326,7 @@
       <span id="winnerText">Jouez votre premier coup</span>
     </div>
     <div class="footer-credit">
-      <i class="fas fa-code"></i> IA MinMax · profondeur 4 · design pro
+      <i class="fas fa-code"></i> MinMax IA · mode 2J · design pro
     </div>
   </div>
 
@@ -304,8 +336,8 @@
       const ROWS = 6;
       const COLS = 7;
       const EMPTY = 0;
-      const PLAYER1 = 1; // Humain (rouge)
-      const PLAYER2 = 2; // IA (jaune)
+      const PLAYER1 = 1; // Rouge
+      const PLAYER2 = 2; // Jaune
 
       // ---------- ÉTAT ----------
       let board = [];
@@ -313,6 +345,7 @@
       let gameOver = false;
       let winner = null;
       let isThinking = false;
+      let gameMode = 'pvp'; // 'pvp' ou 'pvai'
 
       // Éléments DOM
       const boardEl = document.getElementById('boardContainer');
@@ -321,6 +354,8 @@
       const winnerText = document.getElementById('winnerText');
       const winnerMsg = document.getElementById('winnerMessage');
       const resetBtn = document.getElementById('resetGameBtn');
+      const modePVP = document.getElementById('modePVP');
+      const modePVAI = document.getElementById('modePVAI');
 
       // ---------- FONCTIONS DU JEU ----------
       function createEmptyBoard() {
@@ -392,7 +427,6 @@
         return false;
       }
 
-      // Vérifier l'état global du jeu après un coup
       function checkGameState(row, col, player) {
         if (checkWin(row, col, player)) {
           winner = player;
@@ -407,40 +441,32 @@
         return 'continue';
       }
 
-      // ---------- IA MINMAX (avec élagage alpha-bêta) ----------
-      // Évaluation heuristique : score pour PLAYER2 (IA)
+      // ---------- IA MINMAX ----------
       function evaluateBoard() {
         let score = 0;
-        // On compte les alignements de 2, 3, 4 pour chaque joueur
-        // Approche simplifiée : on évalue chaque fenêtre de 4 cases (horiz, vert, diag)
         const directions = [
           [1, 0], [0, 1], [1, 1], [1, -1]
         ];
-
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             if (board[r][c] === EMPTY) continue;
             const player = board[r][c];
             for (let [dx, dy] of directions) {
               let count = 1;
-              let openLeft = 0,
-                openRight = 0;
-              // vérifier dans les deux sens
               for (let step = 1; step < 4; step++) {
                 const nr = r + dx * step;
                 const nc = c + dy * step;
                 if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
                 if (board[nr][nc] === player) count++;
-                else if (board[nr][nc] === EMPTY) { openRight++; break; } else break;
+                else break;
               }
               for (let step = 1; step < 4; step++) {
                 const nr = r - dx * step;
                 const nc = c - dy * step;
                 if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
                 if (board[nr][nc] === player) count++;
-                else if (board[nr][nc] === EMPTY) { openLeft++; break; } else break;
+                else break;
               }
-              // On ne compte que si on a un alignement potentiel
               if (count >= 4) {
                 if (player === PLAYER2) score += 1000;
                 else score -= 1000;
@@ -457,17 +483,12 @@
         return score;
       }
 
-      // MinMax avec alpha-bêta, profondeur 4
       function minMax(depth, alpha, beta, isMaximizing) {
         const validCols = getValidCols();
-        // Vérifier terminaison
         if (validCols.length === 0) return { score: 0, col: -1 };
         if (depth === 0) {
           return { score: evaluateBoard(), col: -1 };
         }
-
-        // Vérifier si un joueur a gagné sur le plateau actuel (simulation)
-        // On parcourt le plateau pour détecter une victoire
         for (let r = 0; r < ROWS; r++) {
           for (let c = 0; c < COLS; c++) {
             if (board[r][c] !== EMPTY) {
@@ -478,9 +499,7 @@
             }
           }
         }
-
         let bestCol = validCols[0];
-
         if (isMaximizing) {
           let maxEval = -Infinity;
           for (let col of validCols) {
@@ -488,7 +507,6 @@
             if (!result) continue;
             const { row } = result;
             const evalResult = minMax(depth - 1, alpha, beta, false);
-            // annuler le coup
             board[row][col] = EMPTY;
             if (evalResult.score > maxEval) {
               maxEval = evalResult.score;
@@ -517,28 +535,23 @@
         }
       }
 
-      // Fonction pour faire jouer l'IA
       function playIA() {
-        if (isThinking || gameOver || currentPlayer !== PLAYER2) return;
+        if (isThinking || gameOver || currentPlayer !== PLAYER2 || gameMode !== 'pvai') return;
         isThinking = true;
         updateStatus();
 
-        // Petit délai pour l'effet "réflexion"
         setTimeout(() => {
           const validCols = getValidCols();
           if (validCols.length === 0) {
             isThinking = false;
             return;
           }
-
           const result = minMax(4, -Infinity, Infinity, true);
           const col = result.col;
           if (col === -1 || col === undefined) {
             isThinking = false;
             return;
           }
-
-          // Exécuter le coup
           const dropResult = dropToken(col, PLAYER2);
           if (!dropResult) {
             isThinking = false;
@@ -552,28 +565,31 @@
           }
           isThinking = false;
           updateStatus();
-          // Si le jeu continue et que c'est au tour de l'IA, rejouer (normalement c'est le tour du joueur1)
-          if (!gameOver && currentPlayer === PLAYER2) {
+          if (!gameOver && currentPlayer === PLAYER2 && gameMode === 'pvai') {
             playIA();
           }
         }, 80);
       }
 
-      // ---------- GESTION DU CLIC HUMAIN ----------
-      function handleHumanMove(col) {
-        if (gameOver || isThinking || currentPlayer !== PLAYER1) return;
+      // ---------- GESTION DES COUPS ----------
+      function handleMove(col) {
+        if (gameOver || isThinking) return;
         if (board[0][col] !== EMPTY) return;
 
-        const dropResult = dropToken(col, PLAYER1);
+        const dropResult = dropToken(col, currentPlayer);
         if (!dropResult) return;
         const { row } = dropResult;
-        const state = checkGameState(row, col, PLAYER1);
+        const state = checkGameState(row, col, currentPlayer);
         renderBoard();
+
         if (state === 'continue') {
-          currentPlayer = PLAYER2;
+          // Changer de joueur
+          currentPlayer = (currentPlayer === PLAYER1) ? PLAYER2 : PLAYER1;
           updateStatus();
-          // L'IA joue
-          playIA();
+          // Si mode IA et c'est au tour de l'IA
+          if (gameMode === 'pvai' && currentPlayer === PLAYER2 && !gameOver) {
+            playIA();
+          }
         } else {
           updateStatus();
         }
@@ -601,7 +617,7 @@
             }
             cell.addEventListener('click', () => {
               const col = parseInt(cell.dataset.col, 10);
-              handleHumanMove(col);
+              handleMove(col);
             });
             boardEl.appendChild(cell);
           }
@@ -614,7 +630,7 @@
             turnBadge.className = 'token-badge';
             turnBadge.textContent = '●';
             turnBadge.style.background = '#e43f3f';
-            turnText.textContent = 'Victoire Humain !';
+            turnText.textContent = 'Joueur 1 gagne !';
             winnerText.textContent = '🏆 Joueur 1 (Rouge) a gagné !';
             winnerMsg.style.background = 'rgba(228, 63, 63, 0.08)';
             winnerMsg.style.borderColor = '#e43f3f';
@@ -622,8 +638,13 @@
             turnBadge.className = 'token-badge yellow';
             turnBadge.textContent = '●';
             turnBadge.style.background = '#f5b342';
-            turnText.textContent = 'IA gagne !';
-            winnerText.textContent = '🤖 IA (Jaune) a gagné !';
+            if (gameMode === 'pvai') {
+              turnText.textContent = 'IA gagne !';
+              winnerText.textContent = '🤖 IA (Jaune) a gagné !';
+            } else {
+              turnText.textContent = 'Joueur 2 gagne !';
+              winnerText.textContent = '🏆 Joueur 2 (Jaune) a gagné !';
+            }
             winnerMsg.style.background = 'rgba(245, 179, 66, 0.08)';
             winnerMsg.style.borderColor = '#f5b342';
           } else if (winner === 'draw') {
@@ -653,25 +674,45 @@
           turnBadge.className = 'token-badge';
           turnBadge.textContent = '●';
           turnBadge.style.background = '#e43f3f';
-          turnText.textContent = 'Votre tour (Rouge)';
-          winnerText.textContent = 'À vous de jouer !';
+          turnText.textContent = gameMode === 'pvai' ? 'Votre tour (Rouge)' : 'Joueur 1 (Rouge)';
+          winnerText.textContent = gameMode === 'pvai' ? 'À vous de jouer !' : 'Tour du Joueur 1';
           winnerMsg.style.background = 'rgba(11,26,51,0.04)';
           winnerMsg.style.borderColor = 'rgba(255,255,255,0.5)';
         } else {
           turnBadge.className = 'token-badge yellow';
           turnBadge.textContent = '●';
           turnBadge.style.background = '#f5b342';
-          turnText.textContent = 'Tour de l\'IA (Jaune)';
-          winnerText.textContent = 'L\'IA va jouer...';
+          if (gameMode === 'pvai') {
+            turnText.textContent = 'Tour de l\'IA (Jaune)';
+            winnerText.textContent = 'L\'IA va jouer...';
+          } else {
+            turnText.textContent = 'Joueur 2 (Jaune)';
+            winnerText.textContent = 'Tour du Joueur 2';
+          }
           winnerMsg.style.background = 'rgba(245, 179, 66, 0.05)';
           winnerMsg.style.borderColor = '#f5b34280';
         }
+      }
+
+      // ---------- MODE ----------
+      function setMode(mode) {
+        gameMode = mode;
+        modePVP.classList.toggle('active', mode === 'pvp');
+        modePVAI.classList.toggle('active', mode === 'pvai');
+        resetGame();
+        // Si mode IA, c'est au joueur de commencer
+        currentPlayer = PLAYER1;
+        updateStatus();
       }
 
       // ---------- INIT ----------
       function init() {
         resetGame();
         resetBtn.addEventListener('click', resetGame);
+        modePVP.addEventListener('click', () => setMode('pvp'));
+        modePVAI.addEventListener('click', () => setMode('pvai'));
+        // Démarrer en mode PVP
+        setMode('pvp');
       }
 
       init();
