@@ -1,78 +1,681 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puissance 4 — Nouveau Design</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puissance 4 · IA MinMax</title>
+  <!-- Font & icônes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f0f4fa 0%, #d9e2ef 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Inter', sans-serif;
+      padding: 1.5rem;
+    }
+
+    .game-card {
+      max-width: 820px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 48px;
+      padding: 2rem 2rem 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #0b1a33;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 2px solid rgba(11, 26, 51, 0.08);
+      padding-bottom: 1rem;
+    }
+
+    h1 i {
+      color: #2a5c8a;
+      font-size: 2rem;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 0.8rem 1.5rem;
+      border-radius: 60px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .turn-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #1f3a5f;
+    }
+
+    .token-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e43f3f;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 4px 8px rgba(228, 63, 63, 0.3);
+      transition: 0.2s;
+    }
+
+    .token-badge.yellow {
+      background: #f5b342;
+      box-shadow: 0 4px 8px rgba(245, 179, 66, 0.3);
+    }
+
+    .reset-btn {
+      background: #1f3a5f;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 8px 16px -6px rgba(31, 58, 95, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .reset-btn:hover {
+      background: #2a4a74;
+      transform: scale(1.02);
+      box-shadow: 0 12px 24px -8px rgba(31, 58, 95, 0.3);
+    }
+
+    .reset-btn:active {
+      transform: scale(0.96);
+    }
+
+    .grid-wrapper {
+      background: #0b1a33;
+      border-radius: 40px;
+      padding: 1.2rem 0.8rem;
+      box-shadow: inset 0 6px 12px rgba(0, 0, 0, 0.3), 0 20px 30px -10px rgba(0, 0, 0, 0.2);
+      margin-bottom: 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      background: #1b3554;
+      border-radius: 50%;
+      box-shadow: inset 0 -6px 0 #0a1424, 0 0 0 2px #27436a;
+      transition: 0.12s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .cell[data-player="1"] {
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, #d43f3f);
+      box-shadow: inset 0 -4px 0 #9e2a2a, 0 0 0 2px #d95353;
+    }
+
+    .cell[data-player="2"] {
+      background: radial-gradient(circle at 30% 30%, #ffd966, #f5b342);
+      box-shadow: inset 0 -4px 0 #b87c2a, 0 0 0 2px #e6b84a;
+    }
+
+    .cell:not([data-player]) {
+      cursor: pointer;
+    }
+
+    .cell:not([data-player]):hover {
+      background: #274d77;
+      transform: scale(0.96);
+      box-shadow: inset 0 -4px 0 #0f203b, 0 0 0 2px #4a7aa8;
+    }
+
+    .cell:not([data-player]):active {
+      transform: scale(0.92);
+    }
+
+    .cell.thinking {
+      animation: pulse-glow 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-glow {
+      0% { box-shadow: inset 0 -4px 0 #0f203b, 0 0 0 2px #4a7aa8, 0 0 8px #4a7aa8; }
+      100% { box-shadow: inset 0 -4px 0 #0f203b, 0 0 0 2px #aac9ff, 0 0 20px #6a9fff; }
+    }
+
+    .winner-msg {
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.4rem;
+      padding: 0.8rem 1.2rem;
+      border-radius: 60px;
+      background: rgba(11, 26, 51, 0.04);
+      color: #0b1a33;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      min-height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+
+    .winner-msg i {
+      color: #f5b342;
+    }
+
+    .footer-credit {
+      text-align: center;
+      margin-top: 1.2rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #34547c;
+      opacity: 0.7;
+      letter-spacing: 0.3px;
+    }
+
+    .footer-credit i {
+      margin: 0 4px;
+    }
+
+    .ia-badge {
+      background: #1f3a5f20;
+      padding: 0.2rem 1rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #1f3a5f;
+      border: 1px solid #1f3a5f20;
+    }
+
+    @media (max-width: 600px) {
+      .game-card {
+        padding: 1.2rem;
+        border-radius: 32px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      .board {
+        gap: 6px;
+      }
+      .grid-wrapper {
+        padding: 0.8rem 0.4rem;
+      }
+      .status-bar {
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        justify-content: center;
+      }
+      .reset-btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main class="app">
-    <header class="app-header">
-      <div class="brand">
-        <h1 class="title">Puissance 4</h1>
-        <span class="tag">Version revisitée</span>
+  <div class="game-card" role="main">
+    <h1>
+      <i class="fas fa-chess-queen"></i> Puissance 4 · IA
+    </h1>
+
+    <div class="status-bar">
+      <div class="turn-indicator" id="turnIndicator">
+        <span>Tour</span>
+        <span class="token-badge" id="turnBadge">●</span>
+        <span id="turnText">Joueur 1</span>
       </div>
-      <nav class="top-actions">
-        <button id="reset-btn" class="btn btn-primary">🔄 Nouvelle partie</button>
-        <button id="undo-btn" class="btn">↶ Annuler</button>
-        <button id="ai-toggle" class="btn">🤖 IA : OFF</button>
-        <label for="ai-depth" class="sr-only">Difficulté</label>
-        <select id="ai-depth" class="select">
-          <option value="3">Facile (3)</option>
-          <option value="5" selected>Moyen (5)</option>
-          <option value="7">Difficile (7)</option>
-        </select>
-      </nav>
-    </header>
+      <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
+        <span class="ia-badge"><i class="fas fa-brain"></i> IA MinMax</span>
+        <button class="reset-btn" id="resetGameBtn">
+          <i class="fas fa-rotate-right"></i> Nouvelle partie
+        </button>
+      </div>
+    </div>
 
-    <section class="content">
-      <aside class="panel left-panel">
-        <div class="card info">
-          <div id="current-turn" class="turn">Tour : <span class="player red">🔴 Rouge</span></div>
-          <div class="stats">
-            <div class="stat"><strong id="moves">0</strong><span>Coups</span></div>
-            <div class="stat"><strong id="rows">6×7</strong><span>Plateau</span></div>
-          </div>
-          <p class="help">Cliquez sur une colonne pour déposer un jeton. Activez l'IA pour jouer contre l'ordinateur.</p>
-        </div>
-      </aside>
+    <div class="grid-wrapper">
+      <div class="board" id="boardContainer"></div>
+    </div>
 
-      <section class="board-area">
-        <div class="board-frame">
-          <canvas id="gameCanvas" width="560" height="480" class="game-canvas" aria-label="Plateau Puissance 4"></canvas>
-          <div class="board-shadow"></div>
-        </div>
-      </section>
+    <div class="winner-msg" id="winnerMessage">
+      <i class="fas fa-circle" style="color: #1f3a5f; opacity: 0.3;"></i>
+      <span id="winnerText">Jouez votre premier coup</span>
+    </div>
+    <div class="footer-credit">
+      <i class="fas fa-code"></i> IA MinMax · profondeur 4 · design pro
+    </div>
+  </div>
 
-      <aside class="panel right-panel">
-        <div class="card actions">
-          <h3>Options</h3>
-          <label class="switch">
-            <input id="sound-toggle" type="checkbox">
-            <span class="slider"></span>
-            <span class="label">Son</span>
-          </label>
-          <label class="switch">
-            <input id="anim-toggle" type="checkbox" checked>
-            <span class="slider"></span>
-            <span class="label">Animations</span>
-          </label>
-        </div>
+  <script>
+    (function() {
+      // ---------- CONSTANTES ----------
+      const ROWS = 6;
+      const COLS = 7;
+      const EMPTY = 0;
+      const PLAYER1 = 1; // Humain (rouge)
+      const PLAYER2 = 2; // IA (jaune)
 
-        <div class="card credits">
-          <h4>À propos</h4>
-          <p>Refonte UI — prête pour IA et améliorations d'accessibilité.</p>
-        </div>
-      </aside>
-    </section>
+      // ---------- ÉTAT ----------
+      let board = [];
+      let currentPlayer = PLAYER1;
+      let gameOver = false;
+      let winner = null;
+      let isThinking = false;
 
-    <footer class="app-footer">
-      <small>© 2026 — Refonte par Copilot (suggestion)</small>
-    </footer>
-  </main>
+      // Éléments DOM
+      const boardEl = document.getElementById('boardContainer');
+      const turnBadge = document.getElementById('turnBadge');
+      const turnText = document.getElementById('turnText');
+      const winnerText = document.getElementById('winnerText');
+      const winnerMsg = document.getElementById('winnerMessage');
+      const resetBtn = document.getElementById('resetGameBtn');
 
-  <script src="script.js"></script>
+      // ---------- FONCTIONS DU JEU ----------
+      function createEmptyBoard() {
+        return Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
+      }
+
+      function resetGame() {
+        board = createEmptyBoard();
+        currentPlayer = PLAYER1;
+        gameOver = false;
+        winner = null;
+        isThinking = false;
+        renderBoard();
+        updateStatus();
+        winnerMsg.style.background = 'rgba(11,26,51,0.04)';
+        winnerMsg.style.borderColor = 'rgba(255,255,255,0.5)';
+      }
+
+      function isBoardFull() {
+        for (let c = 0; c < COLS; c++) {
+          if (board[0][c] === EMPTY) return false;
+        }
+        return true;
+      }
+
+      function getValidCols() {
+        const cols = [];
+        for (let c = 0; c < COLS; c++) {
+          if (board[0][c] === EMPTY) cols.push(c);
+        }
+        return cols;
+      }
+
+      function dropToken(col, player) {
+        if (col < 0 || col >= COLS) return null;
+        let row = -1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r][col] === EMPTY) {
+            row = r;
+            break;
+          }
+        }
+        if (row === -1) return null;
+        board[row][col] = player;
+        return { row, col };
+      }
+
+      function checkWin(row, col, player) {
+        if (board[row][col] !== player) return false;
+        const directions = [
+          [1, 0], [0, 1], [1, 1], [1, -1]
+        ];
+        for (let [dx, dy] of directions) {
+          let count = 1;
+          for (let step = 1; step < 4; step++) {
+            const nr = row + dx * step;
+            const nc = col + dy * step;
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+            if (board[nr][nc] === player) count++; else break;
+          }
+          for (let step = 1; step < 4; step++) {
+            const nr = row - dx * step;
+            const nc = col - dy * step;
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+            if (board[nr][nc] === player) count++; else break;
+          }
+          if (count >= 4) return true;
+        }
+        return false;
+      }
+
+      // Vérifier l'état global du jeu après un coup
+      function checkGameState(row, col, player) {
+        if (checkWin(row, col, player)) {
+          winner = player;
+          gameOver = true;
+          return 'win';
+        }
+        if (isBoardFull()) {
+          winner = 'draw';
+          gameOver = true;
+          return 'draw';
+        }
+        return 'continue';
+      }
+
+      // ---------- IA MINMAX (avec élagage alpha-bêta) ----------
+      // Évaluation heuristique : score pour PLAYER2 (IA)
+      function evaluateBoard() {
+        let score = 0;
+        // On compte les alignements de 2, 3, 4 pour chaque joueur
+        // Approche simplifiée : on évalue chaque fenêtre de 4 cases (horiz, vert, diag)
+        const directions = [
+          [1, 0], [0, 1], [1, 1], [1, -1]
+        ];
+
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (board[r][c] === EMPTY) continue;
+            const player = board[r][c];
+            for (let [dx, dy] of directions) {
+              let count = 1;
+              let openLeft = 0,
+                openRight = 0;
+              // vérifier dans les deux sens
+              for (let step = 1; step < 4; step++) {
+                const nr = r + dx * step;
+                const nc = c + dy * step;
+                if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+                if (board[nr][nc] === player) count++;
+                else if (board[nr][nc] === EMPTY) { openRight++; break; } else break;
+              }
+              for (let step = 1; step < 4; step++) {
+                const nr = r - dx * step;
+                const nc = c - dy * step;
+                if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+                if (board[nr][nc] === player) count++;
+                else if (board[nr][nc] === EMPTY) { openLeft++; break; } else break;
+              }
+              // On ne compte que si on a un alignement potentiel
+              if (count >= 4) {
+                if (player === PLAYER2) score += 1000;
+                else score -= 1000;
+              } else if (count === 3) {
+                if (player === PLAYER2) score += 10;
+                else score -= 10;
+              } else if (count === 2) {
+                if (player === PLAYER2) score += 1;
+                else score -= 1;
+              }
+            }
+          }
+        }
+        return score;
+      }
+
+      // MinMax avec alpha-bêta, profondeur 4
+      function minMax(depth, alpha, beta, isMaximizing) {
+        const validCols = getValidCols();
+        // Vérifier terminaison
+        if (validCols.length === 0) return { score: 0, col: -1 };
+        if (depth === 0) {
+          return { score: evaluateBoard(), col: -1 };
+        }
+
+        // Vérifier si un joueur a gagné sur le plateau actuel (simulation)
+        // On parcourt le plateau pour détecter une victoire
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (board[r][c] !== EMPTY) {
+              if (checkWin(r, c, board[r][c])) {
+                if (board[r][c] === PLAYER2) return { score: 10000 + depth, col: -1 };
+                else return { score: -10000 - depth, col: -1 };
+              }
+            }
+          }
+        }
+
+        let bestCol = validCols[0];
+
+        if (isMaximizing) {
+          let maxEval = -Infinity;
+          for (let col of validCols) {
+            const result = dropToken(col, PLAYER2);
+            if (!result) continue;
+            const { row } = result;
+            const evalResult = minMax(depth - 1, alpha, beta, false);
+            // annuler le coup
+            board[row][col] = EMPTY;
+            if (evalResult.score > maxEval) {
+              maxEval = evalResult.score;
+              bestCol = col;
+            }
+            alpha = Math.max(alpha, maxEval);
+            if (beta <= alpha) break;
+          }
+          return { score: maxEval, col: bestCol };
+        } else {
+          let minEval = Infinity;
+          for (let col of validCols) {
+            const result = dropToken(col, PLAYER1);
+            if (!result) continue;
+            const { row } = result;
+            const evalResult = minMax(depth - 1, alpha, beta, true);
+            board[row][col] = EMPTY;
+            if (evalResult.score < minEval) {
+              minEval = evalResult.score;
+              bestCol = col;
+            }
+            beta = Math.min(beta, minEval);
+            if (beta <= alpha) break;
+          }
+          return { score: minEval, col: bestCol };
+        }
+      }
+
+      // Fonction pour faire jouer l'IA
+      function playIA() {
+        if (isThinking || gameOver || currentPlayer !== PLAYER2) return;
+        isThinking = true;
+        updateStatus();
+
+        // Petit délai pour l'effet "réflexion"
+        setTimeout(() => {
+          const validCols = getValidCols();
+          if (validCols.length === 0) {
+            isThinking = false;
+            return;
+          }
+
+          const result = minMax(4, -Infinity, Infinity, true);
+          const col = result.col;
+          if (col === -1 || col === undefined) {
+            isThinking = false;
+            return;
+          }
+
+          // Exécuter le coup
+          const dropResult = dropToken(col, PLAYER2);
+          if (!dropResult) {
+            isThinking = false;
+            return;
+          }
+          const { row } = dropResult;
+          const state = checkGameState(row, col, PLAYER2);
+          renderBoard();
+          if (state === 'continue') {
+            currentPlayer = PLAYER1;
+          }
+          isThinking = false;
+          updateStatus();
+          // Si le jeu continue et que c'est au tour de l'IA, rejouer (normalement c'est le tour du joueur1)
+          if (!gameOver && currentPlayer === PLAYER2) {
+            playIA();
+          }
+        }, 80);
+      }
+
+      // ---------- GESTION DU CLIC HUMAIN ----------
+      function handleHumanMove(col) {
+        if (gameOver || isThinking || currentPlayer !== PLAYER1) return;
+        if (board[0][col] !== EMPTY) return;
+
+        const dropResult = dropToken(col, PLAYER1);
+        if (!dropResult) return;
+        const { row } = dropResult;
+        const state = checkGameState(row, col, PLAYER1);
+        renderBoard();
+        if (state === 'continue') {
+          currentPlayer = PLAYER2;
+          updateStatus();
+          // L'IA joue
+          playIA();
+        } else {
+          updateStatus();
+        }
+      }
+
+      // ---------- RENDU ----------
+      function renderBoard() {
+        boardEl.innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            const val = board[r][c];
+            if (val === PLAYER1) {
+              cell.dataset.player = '1';
+              cell.textContent = '●';
+            } else if (val === PLAYER2) {
+              cell.dataset.player = '2';
+              cell.textContent = '●';
+            } else {
+              cell.dataset.player = '';
+              cell.textContent = '';
+            }
+            cell.addEventListener('click', () => {
+              const col = parseInt(cell.dataset.col, 10);
+              handleHumanMove(col);
+            });
+            boardEl.appendChild(cell);
+          }
+        }
+      }
+
+      function updateStatus() {
+        if (gameOver) {
+          if (winner === PLAYER1) {
+            turnBadge.className = 'token-badge';
+            turnBadge.textContent = '●';
+            turnBadge.style.background = '#e43f3f';
+            turnText.textContent = 'Victoire Humain !';
+            winnerText.textContent = '🏆 Joueur 1 (Rouge) a gagné !';
+            winnerMsg.style.background = 'rgba(228, 63, 63, 0.08)';
+            winnerMsg.style.borderColor = '#e43f3f';
+          } else if (winner === PLAYER2) {
+            turnBadge.className = 'token-badge yellow';
+            turnBadge.textContent = '●';
+            turnBadge.style.background = '#f5b342';
+            turnText.textContent = 'IA gagne !';
+            winnerText.textContent = '🤖 IA (Jaune) a gagné !';
+            winnerMsg.style.background = 'rgba(245, 179, 66, 0.08)';
+            winnerMsg.style.borderColor = '#f5b342';
+          } else if (winner === 'draw') {
+            turnBadge.className = 'token-badge';
+            turnBadge.textContent = '🤝';
+            turnBadge.style.background = '#3a5a7a';
+            turnText.textContent = 'Match nul';
+            winnerText.textContent = '🤝 Égalité !';
+            winnerMsg.style.background = 'rgba(58, 90, 122, 0.08)';
+            winnerMsg.style.borderColor = '#3a5a7a';
+          }
+          return;
+        }
+
+        if (isThinking) {
+          turnBadge.className = 'token-badge yellow';
+          turnBadge.textContent = '🧠';
+          turnBadge.style.background = '#3a5a7a';
+          turnText.textContent = 'IA réfléchit...';
+          winnerText.textContent = '⏳ L\'IA analyse le plateau';
+          winnerMsg.style.background = 'rgba(58, 90, 122, 0.06)';
+          winnerMsg.style.borderColor = '#3a5a7a';
+          return;
+        }
+
+        if (currentPlayer === PLAYER1) {
+          turnBadge.className = 'token-badge';
+          turnBadge.textContent = '●';
+          turnBadge.style.background = '#e43f3f';
+          turnText.textContent = 'Votre tour (Rouge)';
+          winnerText.textContent = 'À vous de jouer !';
+          winnerMsg.style.background = 'rgba(11,26,51,0.04)';
+          winnerMsg.style.borderColor = 'rgba(255,255,255,0.5)';
+        } else {
+          turnBadge.className = 'token-badge yellow';
+          turnBadge.textContent = '●';
+          turnBadge.style.background = '#f5b342';
+          turnText.textContent = 'Tour de l\'IA (Jaune)';
+          winnerText.textContent = 'L\'IA va jouer...';
+          winnerMsg.style.background = 'rgba(245, 179, 66, 0.05)';
+          winnerMsg.style.borderColor = '#f5b34280';
+        }
+      }
+
+      // ---------- INIT ----------
+      function init() {
+        resetGame();
+        resetBtn.addEventListener('click', resetGame);
+      }
+
+      init();
+    })();
+  </script>
 </body>
 </html>
