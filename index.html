@@ -3,25 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puissance 4 Pro</title>
+  <title>Puissance 4 — Nouveau Design</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app">
-    <h1>🎮 Puissance 4</h1>
-    <div class="game-info">
-      <span id="current-turn">Tour : 🔴 Rouge</span>
-      <button id="reset-btn">🔄 Nouvelle partie</button>
-      <button id="ai-toggle">🤖 Jouer vs IA: OFF</button>
-      <label for="ai-depth">Difficulté:</label>
-      <select id="ai-depth">
-        <option value="3">Facile (3)</option>
-        <option value="5" selected>Moyen (5)</option>
-        <option value="7">Difficile (7)</option>
-      </select>
-    </div>
-    <canvas id="gameCanvas" width="560" height="480"></canvas>
-  </div>
+  <main class="app">
+    <header class="app-header">
+      <div class="brand">
+        <h1 class="title">Puissance 4</h1>
+        <span class="tag">Version revisitée</span>
+      </div>
+      <nav class="top-actions">
+        <button id="reset-btn" class="btn btn-primary">🔄 Nouvelle partie</button>
+        <button id="undo-btn" class="btn">↶ Annuler</button>
+        <button id="ai-toggle" class="btn">🤖 IA : OFF</button>
+        <label for="ai-depth" class="sr-only">Difficulté</label>
+        <select id="ai-depth" class="select">
+          <option value="3">Facile (3)</option>
+          <option value="5" selected>Moyen (5)</option>
+          <option value="7">Difficile (7)</option>
+        </select>
+      </nav>
+    </header>
+
+    <section class="content">
+      <aside class="panel left-panel">
+        <div class="card info">
+          <div id="current-turn" class="turn">Tour : <span class="player red">🔴 Rouge</span></div>
+          <div class="stats">
+            <div class="stat"><strong id="moves">0</strong><span>Coups</span></div>
+            <div class="stat"><strong id="rows">6×7</strong><span>Plateau</span></div>
+          </div>
+          <p class="help">Cliquez sur une colonne pour déposer un jeton. Activez l'IA pour jouer contre l'ordinateur.</p>
+        </div>
+      </aside>
+
+      <section class="board-area">
+        <div class="board-frame">
+          <canvas id="gameCanvas" width="560" height="480" class="game-canvas" aria-label="Plateau Puissance 4"></canvas>
+          <div class="board-shadow"></div>
+        </div>
+      </section>
+
+      <aside class="panel right-panel">
+        <div class="card actions">
+          <h3>Options</h3>
+          <label class="switch">
+            <input id="sound-toggle" type="checkbox">
+            <span class="slider"></span>
+            <span class="label">Son</span>
+          </label>
+          <label class="switch">
+            <input id="anim-toggle" type="checkbox" checked>
+            <span class="slider"></span>
+            <span class="label">Animations</span>
+          </label>
+        </div>
+
+        <div class="card credits">
+          <h4>À propos</h4>
+          <p>Refonte UI — prête pour IA et améliorations d'accessibilité.</p>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="app-footer">
+      <small>© 2026 — Refonte par Copilot (suggestion)</small>
+    </footer>
+  </main>
+
   <script src="script.js"></script>
 </body>
 </html>
