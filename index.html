@@ -12,6 +12,13 @@
     <div class="game-info">
       <span id="current-turn">Tour : 🔴 Rouge</span>
       <button id="reset-btn">🔄 Nouvelle partie</button>
+      <button id="ai-toggle">🤖 Jouer vs IA: OFF</button>
+      <label for="ai-depth">Difficulté:</label>
+      <select id="ai-depth">
+        <option value="3">Facile (3)</option>
+        <option value="5" selected>Moyen (5)</option>
+        <option value="7">Difficile (7)</option>
+      </select>
     </div>
     <canvas id="gameCanvas" width="560" height="480"></canvas>
   </div>
